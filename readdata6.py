@@ -60,6 +60,7 @@ def main():
     quaternion = Quaternion()
     sensor_data = Sensor_data()
     sensor1 = Sensor()
+    baseline = []
     #print(IRQ)
     # First read register 
     resp = spi.xfer2([0x01,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
@@ -71,7 +72,7 @@ def main():
     print(BytesToHex(resp))
     try:
         # read data
-        pac128 = [0x00,0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+        pac128 = [0x00,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
         resp1 = spi.xfer2(pac128)
         print(BytesToHex(resp1))
         number = spi.xfer2([0x12,0])
@@ -105,44 +106,101 @@ def main():
                     real_data = data[4:-1]
                     print(real_data)
                     real_data = bytearray(real_data)
+                    print('____________________________________________')
                     #print(real_data)
                     sensor1 = calculatesensor.calsensor(real_data,sensor1)
                     #writer.writerow([sensor1.sensor_data.package,sensor1.sensor_data.quaternion.qua1,sensor1.sensor_data.quaternion.qua2,sensor1.sensor_data.quaternion.qua3,sensor1.sensor_data.quaternion.qua4,sensor1.sensor_data.gyroscope.gyro_x,sensor1.sensor_data.gyroscope.gyro_y,sensor1.sensor_data.gyroscope.gyro_z])
-                    #(angle, step) = fpa.fpa(sensor1)
+                    (angle, step) = fpa.fpa(sensor1)
                     #writer1.writerow([angle,step])
-                    '''if step > 1:
-                        if angle !=0:
-                            print('angle:'+ str(angle))
-                            print('step:' + str(step))'''
-                    #print(sensor1.sensor_data.acceleration.acc_z)
-                    if sensor1.sensor_data.acceleration.acc_z>10:
-                        testi2c.motor_control(0,1)
-                    elif sensor1.sensor_data.acceleration.acc_z < 0:
-                        testi2c.motor_control(2,1)
-                    else:
-                        testi2c.motor_control(0,0)
-                        testi2c.motor_control(2,0)
-                    print("_________________________________________")
+                    if angle!=0:
+                        baseline.append(angle)
+                    if step == 6:
+                        base_fpa = (np.sum(baseline)/5)
+                        print("baseline_finish_____________________________________________________")
+                        state_flag = 1
                     data = []
                     real_data = []
                     i = head_index
                     while i<=74:
                         data.append(resp2[i])
                         i = i+1
-                #print(data)
-                #data = []
             else:
                 while number[1] < 74:
                     number = spi.xfer2([0x12,0])
-                    #print(number)
+                    
+        if state_flag == 1:
+            data = []
+            head_index = 1
+            first_flag = 1
+            i = 0
+            real_data = []
+            resp = spi.xfer2([0x01,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+            print(BytesToHex(resp))
+            resp = spi.xfer2([0x01,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
+            print(BytesToHex(resp)) 
+             pac128 = [0x00,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            resp1 = spi.xfer2(pac128)
+            print(BytesToHex(resp1))
+            number = spi.xfer2([0x12,0])
+            print(number)
+            while state_flag == 1:
+                if number[1] == 74:
+                    pac74 = [0x00,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+                    resp2 = spi.xfer2(pac74)
+                    #print(BytesToHex(resp2))
+                    number = spi.xfer2([0x12,0])
+                    if first_flag == 1:
+                        #print(0)
+                        while i <=74:
+                            i = i+1
+                            if i>=3:
+                                if (resp2[i] == 54) and (resp2[i-1] == 255) and (resp2[i-2] == 250):
+                                    head_index = i-2
+                                    #print(head_index)
+                                    i = i-2
+                                    break
+                        first_flag = 2
+                        while i<=74: 
+                            data.append(resp2[i])
+                            i = i+1
+                    elif first_flag == 2:
+                        i = 1
+                        while i< head_index:
+                            data.append(resp2[i])
+                            i = i + 1
+                        #print(data)
+                        real_data = data[4:-1]
+                        print(real_data)
+                        real_data = bytearray(real_data)
+                        print('____________________________________________')
+                        #print(real_data)
+                        sensor1 = calculatesensor.calsensor(real_data,sensor1)
+                        #writer.writerow([sensor1.sensor_data.package,sensor1.sensor_data.quaternion.qua1,sensor1.sensor_data.quaternion.qua2,sensor1.sensor_data.quaternion.qua3,sensor1.sensor_data.quaternion.qua4,sensor1.sensor_data.gyroscope.gyro_x,sensor1.sensor_data.gyroscope.gyro_y,sensor1.sensor_data.gyroscope.gyro_z])
+                        (angle, step) = fpa.fpa(sensor1)
+                        #writer1.writerow([angle,step])
+                        if angle!=0:
+                            angle = angle - base_fpa
+                            if angle > 0:
+                                testi2c.motor_control(0,1)
+                            else:
+                                testi2c.motor_control(0,0)
+                        data = []
+                        real_data = []
+                        i = head_index
+                        while i<=74:
+                            data.append(resp2[i])
+                            i = i+1
+                else:
+                    while number[1] < 74:
+                        number = spi.xfer2([0x12,0])
             button1 = gpio.input(21)
             if button1 == 0:
                 button1_counter = button1_counter + 1
             else:
                 button1_counter = 0
             if button1_counter >= 20:
-                state_flag = 1
-        if state_flag == 1:
+                state_flag = 2
+        if state_flag == 2:
             spi.close()
             return 200
     except KeyboardInterrupt:

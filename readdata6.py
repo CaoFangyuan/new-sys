@@ -18,6 +18,30 @@ def BytesToHex(Bytes):
 def main():
     # Set motors
     print("begin")
+    #Initial fpa_parameter
+    fpa_parameter.step_count = 0
+    fpa_parameter.fpalist = []
+    fpa_parameter.stance = 0
+    fpa_parameter.fpa_result = 0
+    fpa_parameter.dt = 0.01
+    fpa_parameter.zupt_state = 0
+    fpa_parameter.zupt_count = 0
+    fpa_parameter.flag_stance_to_swing = 0
+    fpa_parameter.flag_swing_to_stance = 0
+    fpa_parameter.stance_time = 0
+    fpa_parameter.fpa_sum = 0
+    fpa_parameter.velocity_world_x_old = 0
+    fpa_parameter.velocity_world_y_old = 0
+    fpa_parameter.velocity_world_z_old = 0
+    fpa_parameter.position_world_x_old = 0
+    fpa_parameter.position_world_y_old = 0
+    fpa_parameter.position_world_z_old = 0
+    fpa_parameter.position_world_x_lasttime = 0
+    fpa_parameter.position_world_y_lasttime = 0
+    fpa_parameter.position_world_z_lasttime = 0
+    fpa_parameter.heading_vector_x_old = 0
+    fpa_parameter.heading_vector_y_old = 0
+    fpa_parameter.heading_vector_z_old = 0
     testi2c.motor(0)
     #testi2c.motor(2)
     #testi2c.motor(3)
@@ -197,13 +221,13 @@ def main():
                 else:
                     while number[1] < 74:
                         number = spi.xfer2([0x12,0])
-            button1 = gpio.input(21)
-            if button1 == 0:
-                button1_counter = button1_counter + 1
-            else:
-                button1_counter = 0
-            if button1_counter >= 20:
-                state_flag = 2
+                button1 = gpio.input(21)
+                if button1 == 0:
+                    button1_counter = button1_counter + 1
+                else:
+                    button1_counter = 0
+                if button1_counter >= 20:
+                    state_flag = 2
             if state_flag == 2:
                 spi.close()
                 csvfile.close()

@@ -4,7 +4,7 @@ import numpy as np
 import fpa_parameter
 
 def fpa(sensor):
-
+    
     gyro_x = sensor.sensor_data.gyroscope.gyro_x
     gyro_y = sensor.sensor_data.gyroscope.gyro_y
     gyro_z = sensor.sensor_data.gyroscope.gyro_z 
@@ -39,7 +39,7 @@ def fpa(sensor):
             if fpa_parameter.zupt_count > fpa_parameter.swing_count_threshold:
                 fpa_parameter.zupt_state = fpa_parameter.stance
                 fpa_parameter.zupt_count = 0
-                fpa_parameter.flag_swing_to_stace = 1
+                fpa_parameter.flag_swing_to_stance = 1
         else:
             fpa_parameter.zupt_count = 0
             fpa_parameter.flag_swing_to_stance = 0
@@ -121,7 +121,10 @@ def fpa(sensor):
     temp2 = math.sqrt(q_foot_vector[1]*q_foot_vector[1]+q_foot_vector[2]*q_foot_vector[2])
     temp3 = math.sqrt(fpa_parameter.heading_vector_x_old*fpa_parameter.heading_vector_x_old+fpa_parameter.heading_vector_y_old*fpa_parameter.heading_vector_y_old)
     temp4 = q_foot_vector[1]*fpa_parameter.heading_vector_x_old + q_foot_vector[2]*fpa_parameter.heading_vector_y_old
-
+    print('state:'+str(fpa_parameter.zupt_state))
+    print('temp2:'+str(temp2))
+    print('temp3:'+str(temp3))
+    print('temp4:'+str(temp4))
     if temp2 != 0 and temp3 != 0:
         if q_foot_vector[2]*fpa_parameter.heading_vector_x_old - q_foot_vector[1]*fpa_parameter.heading_vector_y_old:
             fpa_temp = math.acos(temp4/temp3/temp2)*180/math.pi
@@ -133,8 +136,10 @@ def fpa(sensor):
     if  fpa_parameter.zupt_state == fpa_parameter.stance and fpa_parameter.stance_time<=15:
         if np.isnan(fpa_temp) == False:
             fpa_parameter.fpa_sum = fpa_parameter.fpa_sum+fpa_temp
+            fpa_parameter.fpalist.append(fpa_parameter.fpa_sum)
+            #print(fpa_parameter.fpalist)
         fpa_parameter.stance_time = fpa_parameter.stance_time +1
-        print("stancetime" + str(fpa_parameter.stance_time))
+        #print("stancetime" + str(fpa_parameter.stance_time))
     
     if fpa_parameter.flag_swing_to_stance == 1:
         fpa_parameter.position_world_x_last_time = position_world_x
@@ -150,22 +155,21 @@ def fpa(sensor):
 
     if fpa_parameter.flag_stance_to_swing == 1:
         if fpa_parameter.stance_time>0:
-            fpa_result = fpa_parameter.fpa_sum/fpa_parameter.stance_time
+            fpa_parameter.fpa_result = fpa_parameter.fpa_sum/fpa_parameter.stance_time
         else:
-            fpa_result = 360
+            fpa_parameter.fpa_result =360
         fpa_parameter.fpa_sum = 0
         fpa_parameter.stance_time = 0
         fpa_parameter.step_count = fpa_parameter.step_count +1
-        return fpa_result, fpa_parameter.step_count
-    else:
-        return 0, 0
 
-    if np.isnan(q_acc_g[1])== False:
+        
+
+    '''if np.isnan(q_acc_g[1])== False:
         fpa_parameter.acceleration_world_x_old = q_acc_g[1]
     if np.isnan(q_acc_g[2])== False:
         fpa_parameter.acceleration_world_y_old = q_acc_g[2]
     if np.isnan(q_acc_g[3])== False:
-        fpa_parameter.acceleration_world_z_old = q_acc_g[3]
+        fpa_parameter.acceleration_world_z_old = q_acc_g[3]'''
     if np.isnan(velocity_world_x)== False:
         fpa_parameter.velocity_world_x_old = velocity_world_x
     if np.isnan(velocity_world_y)== False:
@@ -180,8 +184,15 @@ def fpa(sensor):
     if np.isnan(position_world_z)== False:
         fpa_parameter.position_world_z_old = position_world_z
 
+    print('stance_to_swing:'+str(fpa_parameter.flag_stance_to_swing))
+    print('swing_to_stance:'+str(fpa_parameter.flag_swing_to_stance))
     fpa_parameter.flag_stance_to_swing = 0
     fpa_parameter.flag_swing_to_stance = 0
     
+    if fpa_parameter.fpa_result !=0:
+        return fpa_parameter.fpa_result, fpa_parameter.step_count
+
+    else:
+        return 0, 0
 
 

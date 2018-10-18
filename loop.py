@@ -1,5 +1,5 @@
 import RPi.GPIO as gpio
-import readdata5
+import readdata6
 import time
 
 gpio.setmode(gpio.BCM)
@@ -16,7 +16,7 @@ try:
         if button1_counter >= 20:
             button1_counter = 0
             print("begin")
-            readdata5.main()
+            readdata6.main()
             print("finish")
             time.sleep(10)
 except KeyboardInterrupt:

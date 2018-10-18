@@ -9,6 +9,7 @@ import calculatesensor
 import fpa
 import testi2c
 import csv
+import fpa_parameter
 
 def BytesToHex(Bytes):
     return ''.join(["0x%02X " % x for x in Bytes]).strip()
@@ -18,18 +19,19 @@ def main():
     # Set motors
     print("begin")
     testi2c.motor(0)
-    testi2c.motor(2)
-    testi2c.motor(3)
+    #testi2c.motor(2)
+    #testi2c.motor(3)
+    testi2c.motor_control(0,0)
     gpio.setmode(gpio.BCM)
     # button1
     gpio.setup(21,gpio.IN)
 
-    '''csvfile = open("raw_data.csv",'w')
+    csvfile = open("raw_data.csv",'w')
     writer = csv.writer(csvfile)
     writer.writerow(['package','qua0','qua1','qua2','qua3','angx','angy','angz'])
     csvfile = open("fpa.csv",'w')
     writer1 = csv.writer(csvfile)
-    writer1.writerow(['fpa','step'])'''
+    writer1.writerow(['fpa','step'])
 
     rawdata = []
     # set spi
@@ -111,11 +113,12 @@ def main():
                     sensor1 = calculatesensor.calsensor(real_data,sensor1)
                     #writer.writerow([sensor1.sensor_data.package,sensor1.sensor_data.quaternion.qua1,sensor1.sensor_data.quaternion.qua2,sensor1.sensor_data.quaternion.qua3,sensor1.sensor_data.quaternion.qua4,sensor1.sensor_data.gyroscope.gyro_x,sensor1.sensor_data.gyroscope.gyro_y,sensor1.sensor_data.gyroscope.gyro_z])
                     (angle, step) = fpa.fpa(sensor1)
-                    #writer1.writerow([angle,step])
                     if angle!=0:
                         baseline.append(angle)
+                        writer1.writerow([angle,step])
+                        fpa_parameter.fpa_result = 0
                     if step == 6:
-                        base_fpa = (np.sum(baseline)/5)
+                        base_fpa = (np.sum(baseline[1:]))/4
                         print("baseline_finish_____________________________________________________")
                         state_flag = 1
                     data = []
@@ -138,7 +141,7 @@ def main():
             print(BytesToHex(resp))
             resp = spi.xfer2([0x01,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0])
             print(BytesToHex(resp)) 
-             pac128 = [0x00,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
+            pac128 = [0x00,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
             resp1 = spi.xfer2(pac128)
             print(BytesToHex(resp1))
             number = spi.xfer2([0x12,0])
@@ -177,10 +180,11 @@ def main():
                         sensor1 = calculatesensor.calsensor(real_data,sensor1)
                         #writer.writerow([sensor1.sensor_data.package,sensor1.sensor_data.quaternion.qua1,sensor1.sensor_data.quaternion.qua2,sensor1.sensor_data.quaternion.qua3,sensor1.sensor_data.quaternion.qua4,sensor1.sensor_data.gyroscope.gyro_x,sensor1.sensor_data.gyroscope.gyro_y,sensor1.sensor_data.gyroscope.gyro_z])
                         (angle, step) = fpa.fpa(sensor1)
-                        #writer1.writerow([angle,step])
                         if angle!=0:
-                            angle = angle - base_fpa
-                            if angle > 0:
+                            angle = base_fpa - angle
+                            writer1.writerow([angle,step])
+                            fpa_parameter.fpa_result = 0
+                            if angle > 10:
                                 testi2c.motor_control(0,1)
                             else:
                                 testi2c.motor_control(0,0)
@@ -200,11 +204,12 @@ def main():
                 button1_counter = 0
             if button1_counter >= 20:
                 state_flag = 2
-        if state_flag == 2:
-            spi.close()
-            return 200
+            if state_flag == 2:
+                spi.close()
+                csvfile.close()
+                return 200
     except KeyboardInterrupt:
         spi.close()
         gpio.cleanup()
-        #csvfile.close()
+        csvfile.close()
         print("finish")

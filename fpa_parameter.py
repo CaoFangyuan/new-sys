@@ -1,10 +1,11 @@
 step_count = 0
 gravity_world_constant = 1
 gravitational_acceleration_constant = 9.81
-
+fpalist = []
 swing = 1
 stance = 0
-zupt_gryo_threshold = 0.8
+fpa_result = 0
+zupt_gryo_threshold = 1.2
 swing_count_threshold = 3
 stance_count_threshold = 3
 fpa_weight = 0.35

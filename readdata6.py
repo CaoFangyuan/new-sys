@@ -10,6 +10,7 @@ import fpa
 import testi2c
 import csv
 import fpa_parameter
+import os
 
 def BytesToHex(Bytes):
     return ''.join(["0x%02X " % x for x in Bytes]).strip()
@@ -50,10 +51,19 @@ def main():
     # button1
     gpio.setup(21,gpio.IN)
 
-    csvfile = open("raw_data.csv",'w')
+    file_path = "/home/sage/sage_code/rpi_embedded/bin/new_sys/new-sys/"
+    i_file = -1
+    for dirpath, dirname, filenames in os.walk(file_path):
+        for filepath in filenames:
+            name = os.path.join(file_path, filepath)
+            if os.path.isfile(name):
+                if os.path.splitext(name)[1] =='.csv' and os.path.splitext(name)[0][-5:-1] == 'fpa_':
+                    i_file = int(os.path.splitext(name)[0][-1])
+                            
+    csvfile = open('rawdata'+'_'+str(i_file + 1)+'.csv','w')
     writer = csv.writer(csvfile)
     writer.writerow(['package','qua0','qua1','qua2','qua3','angx','angy','angz'])
-    csvfile = open("fpa.csv",'w')
+    csvfile = open('fpa_'+ str(i_file + 1) + '.csv','w')
     writer1 = csv.writer(csvfile)
     writer1.writerow(['fpa','step'])
 

@@ -4,6 +4,7 @@ import time
 import numpy as np
 import RPi.GPIO as gpio
 import sys
+sys.path.append("/home/sage/sage_code/rpi_embedded/bin/new_sys/new-sys/common/")
 from method import *
 import calculatesensor
 import fpa
@@ -11,6 +12,7 @@ import testi2c
 import csv
 import fpa_parameter
 import os
+import para
 
 def BytesToHex(Bytes):
     return ''.join(["0x%02X " % x for x in Bytes]).strip()
@@ -44,26 +46,31 @@ def main():
     fpa_parameter.heading_vector_y_old = 0
     fpa_parameter.heading_vector_z_old = 0
     testi2c.motor(0)
-    #testi2c.motor(2)
+    testi2c.motor(2)
     #testi2c.motor(3)
     testi2c.motor_control(0,0)
+    testi2c.motor_control(2,0)
     gpio.setmode(gpio.BCM)
     # button1
     gpio.setup(21,gpio.IN)
-
-    file_path = "/home/sage/sage_code/rpi_embedded/bin/new_sys/new-sys/"
+    dir_path = "/home/sage/sage_code/rpi_embedded/bin/new_sys/new-sys/experiment_data/"
     i_file = -1
-    for dirpath, dirname, filenames in os.walk(file_path):
-        for filepath in filenames:
-            name = os.path.join(file_path, filepath)
-            if os.path.isfile(name):
-                if os.path.splitext(name)[1] =='.csv' and os.path.splitext(name)[0][-5:-1] == 'fpa_':
-                    i_file = int(os.path.splitext(name)[0][-1])
-                            
-    csvfile = open('rawdata'+'_'+str(i_file + 1)+'.csv','w')
+    trial_index=[]
+    for dirpath, dirname, filenames in os.walk(dir_path):
+        for filepath in dirname:
+            name = os.path.join(dir_path, filepath)
+            if os.path.splitext(name)[0][-5:-1] == 'FPA_':
+                trial_index.append(os.path.splitext(name)[0][-1])
+    print(trial_index)
+    if len(trial_index)>0:
+        i_file = int(max(trial_index))
+    os.mkdir(dir_path + "FPA_" + str(i_file+1))
+
+    file_path = dir_path + "FPA_" + str(i_file+1)
+    csvfile = open(file_path+'/rawdata'+'_'+str(i_file+1)+'.csv','w')
     writer = csv.writer(csvfile)
     writer.writerow(['package','qua0','qua1','qua2','qua3','angx','angy','angz'])
-    csvfile = open('fpa_'+ str(i_file + 1) + '.csv','w')
+    csvfile = open(file_path+'/fpa_'+ str(i_file+1) + '.csv','w')
     writer1 = csv.writer(csvfile)
     writer1.writerow(['fpa','step'])
 
@@ -218,10 +225,13 @@ def main():
                             angle = base_fpa - angle
                             writer1.writerow([angle,step])
                             fpa_parameter.fpa_result = 0
-                            if angle > 10:
+                            if angle < -para.Right:
                                 testi2c.motor_control(0,1)
+                            elif angle > -para.Left:
+                                testi2c.motor_control(2,1)
                             else:
                                 testi2c.motor_control(0,0)
+                                testi2c.motor_control(2,0)
                         data = []
                         real_data = []
                         i = head_index
@@ -239,6 +249,8 @@ def main():
                 if button1_counter >= 20:
                     state_flag = 2
             if state_flag == 2:
+                testi2c.motor_control(0,0)
+                testi2c.motor_control(2,0)
                 spi.close()
                 csvfile.close()
                 return 200
